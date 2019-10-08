@@ -12,7 +12,7 @@ class ConcurrentArray
       partition.map { |elem| yield elem }
     end
 
-    ConcurrentArray.new(new_array.flatten)
+    ConcurrentArray.new(new_array)
   end
 
   def select_concurrent(thread_count)
@@ -20,7 +20,7 @@ class ConcurrentArray
       partition.select { |elem| yield elem }
     end
 
-    ConcurrentArray.new(new_array.flatten)
+    ConcurrentArray.new(new_array)
   end
 
   def any_concurrent?(thread_count)
@@ -55,7 +55,7 @@ class ConcurrentArray
         if thread_number < thread_count - 1
           partition = @array[(thread_number * partition_size)...((thread_number + 1) * partition_size)]
         else
-          partition = @array[(thread_number * partition_size)..]
+          partition = @array[(thread_number * partition_size)..@array.size]
         end
         next if partition.empty?
 
@@ -65,8 +65,17 @@ class ConcurrentArray
 
     results = []
     threads.each do |thread|
-      results << thread.value
+      # starting = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      val = thread.value
+      next if val.nil?
+      # ending = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      # elapsed = ending - starting
+      #
+      # puts "Thread value awaiting: #{elapsed}"
+
+      val.each { |elem| results << elem }
     end
+
 
     results
   end
