@@ -1,10 +1,15 @@
 (ns clojure1.core)
 
-(defn foo
-  "I don't do a whole lot."
-  [x]
-  (println x "Hello, World!"))
+(defn words-with-characters [characters word-length]
+  (reduce (fn [words _]
+    (flatten
+     (map (fn [character]
+       (map (fn [word] (.concat word character))
+            (remove (fn [word] (.endsWith word character))
+              words)))
+          characters)))
+          '("")
+          (range 1 (inc word-length))))
 
 (defn -main [& args]
-  (foo "joj")
-  )
+  (println (words-with-characters '("a" "b" "c") 4)))
