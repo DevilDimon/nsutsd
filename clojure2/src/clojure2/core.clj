@@ -14,5 +14,12 @@
                      (range 1 interval-count)))
         (/ (+ (f-i-memoized f x interval-count) (f-i-memoized f x 0)) 2))))
 
+(defn square [x] (* x x))
+
 (defn -main [& args]
-  (println (integrate (fn [x] (* x x)) 5)))
+  (println (time (integrate square 5))
+           (time (integrate square 6))
+           (time (integrate square 7))
+           (time (integrate square 8))
+           (time (integrate square 9))
+           (time (integrate square 10))))
