@@ -48,5 +48,28 @@
 (defn negation [expr]
   (list ::not expr))
 
+(defn negation? [expr]
+  (= ::not (first expr)))
+
 (defn implication [expr1 expr2]
   (list ::implies expr1 expr2))
+
+(defn implication? [expr]
+  (= ::implies (first expr)))
+
+(def dnf-rules
+  (list
+    [(fn [expr] (implication? expr))
+     (fn [expr] (disjunction (negation (first (args expr))) (second (args expr))))]
+    ))
+
+(defn dnf [expr]
+  ((some (fn [rule]
+           (if ((first rule) expr)
+             (second rule)
+             false))
+         dnf-rules)
+   expr))
+
+(defn -main [& args]
+  (println (dnf (implication (variable :a) (variable :b)))))
