@@ -26,18 +26,14 @@
     (= (variable-name v1)
        (variable-name v2))))
 
-(defn conjunction [expr & rest]
-  (if (empty? rest)
-    expr
-    (cons ::and (cons expr rest))))
+(defn conjunction [expr1 expr2]
+  (list ::and expr1 expr2))
 
 (defn conjunction? [expr]
   (= ::and (first expr)))
 
-(defn disjunction [expr & rest]
-  (if (empty? rest)
-    expr
-    (cons ::or (cons expr rest))))
+(defn disjunction [expr1 expr2]
+  (list ::or expr1 expr2))
 
 (defn disjunction? [expr]
   (= ::or (first expr)))
@@ -57,11 +53,7 @@
 (defn implication? [expr]
   (= ::implies (first expr)))
 
-(def dnf-rules
-  (list
-    [(fn [expr] (implication? expr))
-     (fn [expr] (disjunction (negation (first (args expr))) (second (args expr))))]
-    ))
+(declare dnf-rules)
 
 (defn dnf [expr]
   ((some (fn [rule]
@@ -70,6 +62,26 @@
              false))
          dnf-rules)
    expr))
+
+(def dnf-rules
+  (list
+    ; A ==> A
+    [(fn [expr] (variable? expr))
+     (fn [expr] expr)]
+    ; ¬A ==> ¬A
+    [(fn [expr] (and
+                  (negation? expr)
+                  (variable? (first (args expr)))))
+     (fn [expr] expr)]
+    ; ¬(¬A) ==> A
+    [(fn [expr] (and
+                  (negation? expr)
+                  (negation? (first (args expr)))))
+     (fn [expr] (dnf (first (args (args expr)))))]
+    ; A->B ==> ¬A∨B
+    [(fn [expr] (implication? expr))
+     (fn [expr] (disjunction (dnf (negation (first (args expr)))) (dnf (second (args expr)))))]
+    ))
 
 (defn -main [& args]
   (println (dnf (implication (variable :a) (variable :b)))))
