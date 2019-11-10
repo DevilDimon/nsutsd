@@ -3,6 +3,34 @@
             [clojure4.core :refer :all]
             [clojure4.core :as c]))
 
+(deftest simple-test
+  (testing "A ==> A"
+    (is (= '(::c/var :a))
+        (dnf (variable :a))))
+  (testing "Single conjunction"
+    (is (= '(::c/and (::c/var :a) (::c/var :b))
+           (dnf (conjunction (variable :a) (variable :b))))))
+  (testing "Single conjunction with var"
+    (is (= '(::c/or (::c/and (::c/var :a) (::c/var :b)) (::c/var :c))
+           (dnf (disjunction (conjunction (variable :a) (variable :b)) (variable :c))))))
+  (testing "Two large conjunctions"
+    (is (= '(::c/or (::c/and (::c/var :a) (::c/and (::c/not (::c/var :b)) (::c/not (::c/var :c))))
+              (::c/and (::c/not (::c/var :d)) (::c/and (::c/var :e) (::c/var :f))))
+           (dnf (disjunction
+                  (conjunction (variable :a)
+                               (conjunction (negation (variable :b)) (negation (variable :c))))
+                  (conjunction (negation (variable :d))
+                               (conjunction (variable :e) (variable :f))))))))
+  (testing "Many conjunctions"
+    (is (= '(::c/or (::c/and (::c/var :a) (::c/and (::c/var :b) (::c/not (::c/var :c))))
+              (::c/or (::c/and (::c/not (::c/var :d)) (::c/and (::c/var :e) (::c/var :f)))
+                (::c/or (::c/and (::c/var :c) (::c/var :d)) (::c/var :b))))
+           (dnf (disjunction
+                  (conjunction (variable :a) (conjunction (variable :b) (negation (variable :c))))
+                  (disjunction
+                    (conjunction (negation (variable :d)) (conjunction (variable :e) (variable :f)))
+                    (disjunction (conjunction (variable :c) (variable :d)) (variable :b)))))))))
+
 (deftest implication-test
   (testing "Simple implication"
     (is (= '(::c/or (::c/not (::c/var :a)) (::c/var :b))

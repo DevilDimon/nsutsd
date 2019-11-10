@@ -68,20 +68,111 @@
     ; A ==> A
     [(fn [expr] (variable? expr))
      (fn [expr] expr)]
+
     ; ¬A ==> ¬A
     [(fn [expr] (and
                   (negation? expr)
                   (variable? (first (args expr)))))
      (fn [expr] expr)]
+
     ; ¬(¬A) ==> A
     [(fn [expr] (and
                   (negation? expr)
                   (negation? (first (args expr)))))
      (fn [expr] (dnf (first (args (args expr)))))]
+
+    ; ¬(A∨B) ==> ¬A∧¬B
+    [(fn [expr] (and
+                  (negation? expr)
+                  (disjunction? (first (args expr)))))
+     (fn [expr] (dnf (conjunction
+                       (negation (first (args (args expr))))
+                       (negation (second (args (args expr)))))))]
+
+    ; ¬(A∧B) ==> ¬A∨¬B
+    [(fn [expr] (and
+                  (negation? expr)
+                  (conjunction? (first (args expr)))))
+     (fn [expr] (disjunction
+                  (dnf (negation (first (args (args expr)))))
+                  (dnf (negation (second (args (args expr)))))))]
+
     ; A->B ==> ¬A∨B
     [(fn [expr] (implication? expr))
      (fn [expr] (disjunction (dnf (negation (first (args expr)))) (dnf (second (args expr)))))]
-    ))
 
+    ; (A∨B)∧C ==> (A∧C)∨(B∧C)
+    [(fn [expr] (and (conjunction? expr)
+                     (disjunction? (first (args expr)))
+                     (not (disjunction? (second (args expr))))
+                     (not (conjunction? (second (args expr))))))
+     (fn [expr] (disjunction
+                  (conjunction (first (args (first (args expr)))) (second (args expr)))
+                  (conjunction (second (args (first (args expr)))) (second (args expr)))))]
+
+    ; C∧(A∨B) ==> (A∧C)∨(B∧C)
+    [(fn [expr] (and
+                  (conjunction? expr)
+                  (disjunction? (second (args expr)))
+                  (not (disjunction? (first (args expr))))
+                  (not (conjunction? (first (args expr))))))
+     (fn [expr] (disjunction
+                  (conjunction (first (args (second (args expr)))) (first (args expr)))
+                  (conjunction (second (args (second (args expr)))) (first (args expr)))))]
+
+    ; (C∨D)∧(A∧B) ==> (A∧(B∧C))∨(A∧(B∧D))
+    [(fn [expr] (and
+                  (conjunction? expr)
+                  (disjunction? (first (args expr)))
+                  (conjunction? (second (args expr)))))
+     (fn [expr] (let [first-first-arg (first (args (first (args expr))))
+                      second-first-arg (second (args (first (args expr))))
+                      first-second-arg (first (args (second (args expr))))
+                      second-second-arg (second (args (second (args expr))))]
+                  (disjunction
+                    (conjunction first-second-arg (conjunction second-second-arg first-first-arg))
+                    (conjunction first-second-arg (conjunction second-second-arg second-first-arg)))))]
+
+    ; (A∧B)∧(C∨D) ==> (A∧(B∧C))∨(A∧(B∧D))
+    [(fn [expr] (and
+                  (conjunction? expr)
+                  (conjunction? (first (args expr)))
+                  (disjunction? (second (args expr)))))
+     (fn [expr] (let [first-first-arg (first (args (first (args expr))))
+                      second-first-arg (second (args (first (args expr))))
+                      first-second-arg (first (args (second (args expr))))
+                      second-second-arg (second (args (second (args expr))))]
+                  (disjunction
+                    (conjunction first-first-arg (conjunction second-first-arg first-second-arg))
+                    (conjunction first-first-arg (conjunction second-first-arg second-second-arg)))))]
+
+    ; (A∨B)∧(C∨D) ==> ((A∧C)∨(A∧D))∨((B∧C)∨(B∧D))
+    [(fn [expr] (and
+                  (conjunction? expr)
+                  (disjunction? (first (args expr)))
+                  (disjunction? (second (args (expr))))))
+     (fn [expr] (let [first-first-arg (first (args (first (args expr))))
+                      second-first-arg (second (args (first (args expr))))
+                      first-second-arg (first (args (second (args expr))))
+                      second-second-arg (second (args (second (args expr))))]
+                  (disjunction
+                    (disjunction
+                      (conjunction first-first-arg first-second-arg)
+                      (conjunction first-first-arg second-second-arg))
+                    (disjunction
+                      (conjunction second-first-arg first-second-arg)
+                      (conjunction second-first-arg second-second-arg)))))]
+
+    ; A∧B ==> A∧B
+    [(fn [expr] (conjunction? expr))
+     (fn [expr] (conjunction (dnf (first (args expr))) (dnf (second (args expr)))))]
+
+    ; A∨B ==> A∨B
+    [(fn [expr] (disjunction? expr))
+     (fn [expr] (disjunction (dnf (first (args expr))) (dnf (second (args expr)))))]
+    ))
+; TODO: Use wikipedia examples to test all DNF transforms from there
+; TODO: Add support for constants
+; TODO: Add support for variable substitutions
 (defn -main [& args]
-  (println (dnf (implication (variable :a) (variable :b)))))
+  (println (dnf (disjunction (conjunction (variable :a) (variable :b)) (variable :c)))))
