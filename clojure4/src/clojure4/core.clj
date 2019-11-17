@@ -123,23 +123,23 @@
     [(fn [expr] (and
                   (negation? expr)
                   (negation? (first (args expr)))))
-     (fn [expr] (dnf (first (args (args expr)))))]
+     (fn [expr] (dnf (first (args (first (args expr))))))]
 
     ; ¬(A∨B) ==> ¬A∧¬B
     [(fn [expr] (and
                   (negation? expr)
                   (disjunction? (first (args expr)))))
      (fn [expr] (dnf (conjunction
-                       (negation (first (args (args expr))))
-                       (negation (second (args (args expr)))))))]
+                       (dnf (negation (first (args (first (args expr))))))
+                       (dnf (negation (second (args (first (args expr)))))))))]
 
     ; ¬(A∧B) ==> ¬A∨¬B
     [(fn [expr] (and
                   (negation? expr)
                   (conjunction? (first (args expr)))))
-     (fn [expr] (disjunction
-                  (dnf (negation (first (args (args expr)))))
-                  (dnf (negation (second (args (args expr)))))))]
+     (fn [expr] (dnf (disjunction
+                       (dnf (negation (first (args (first (args expr))))))
+                       (dnf (negation (second (args (first (args expr)))))))))]
 
     [(fn [expr] (negation? expr))
      (fn [expr] (negation (dnf (first (args expr)))))]
@@ -193,7 +193,7 @@
     [(fn [expr] (and
                   (conjunction? expr)
                   (disjunction? (first (args expr)))
-                  (disjunction? (second (args (expr))))))
+                  (disjunction? (second (args expr)))))
      (fn [expr] (let [first-first-arg (first (args (first (args expr))))
                       second-first-arg (second (args (first (args expr))))
                       first-second-arg (first (args (second (args expr))))
@@ -215,7 +215,6 @@
      (fn [expr] (disjunction (dnf (first (args expr))) (dnf (second (args expr)))))]
     ))
 
-; TODO: Use wikipedia examples to test all DNF transforms from there.
 ; TODO: Add support for constants
 ; TODO: Add support for variable substitutions
 (defn -main [& args]

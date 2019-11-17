@@ -39,6 +39,12 @@
     (is (= '(::c/or (::c/not (::c/var :a)) (::c/or (::c/not (::c/var :b)) (::c/var :c)))
            (dnf-with-preprocessing (implication (variable :a) (implication (variable :b) (variable :c))))))))
 
-;(deftest complex-test
-;  (testing "Double implication with disjunction"
-;    (is (= '()))))
+(deftest complex-test
+  (testing "Double implication with disjunction"
+    (is (= '(::c/or
+              (::c/and (::c/var :x)
+                (::c/and (::c/not (::c/var :y)) (::c/not (::c/var :y))))
+              (::c/and (::c/var :x)
+                (::c/and (::c/not (::c/var :y)) (::c/var :z))))
+           (dnf-with-preprocessing (negation (disjunction (implication (variable :x) (variable :y))
+                                                          (negation (implication (variable :y) (variable :z))))))))))
