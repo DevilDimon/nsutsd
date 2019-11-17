@@ -39,7 +39,9 @@
   (= ::or (first expr)))
 
 (defn args [expr]
-  (rest expr))
+  (cond
+    (= 2 (count expr)) (rest expr)
+    (= 3 (count expr)) (list (second expr) (nth expr 2))))
 
 (defn negation [expr]
   (list ::not expr))
@@ -53,15 +55,57 @@
 (defn implication? [expr]
   (= ::implies (first expr)))
 
-(declare dnf-rules)
+(declare dnf-preprocessing-rules)
 
-(defn dnf [expr]
+(defn dnf-preprocess [expr]
   ((some (fn [rule]
            (if ((first rule) expr)
              (second rule)
              false))
-         dnf-rules)
+         dnf-preprocessing-rules)
    expr))
+
+(def dnf-preprocessing-rules
+  (list
+    [(fn [expr] (variable? expr))
+     (fn [expr] expr)]
+
+    [(fn [expr] (constant? expr))
+     (fn [expr] expr)]
+
+    ; A->B ==> ¬A∨B
+    [(fn [expr] (implication? expr))
+     (fn [expr] (disjunction
+                  (dnf-preprocess (negation (first (args expr))))
+                  (dnf-preprocess (second (args expr)))))]
+
+
+    [(fn [expr] (= (count (args expr)) 1))
+     (fn [expr] (list (first expr) (dnf-preprocess (first (args expr)))))]
+
+    [(fn [expr] (= (count (args expr)) 2))
+     (fn [expr] (list (first expr) (dnf-preprocess (first (args expr))) (dnf-preprocess (second (args expr)))))]
+    ))
+
+(declare dnf-rules)
+
+(defn dnf-with-preprocessing [expr]
+  (let [preprocessed-expr (dnf-preprocess expr)]
+    ;(println preprocessed-expr)
+    ((some (fn [rule]
+             (if ((first rule) preprocessed-expr)
+               (second rule)
+               false))
+           dnf-rules)
+     preprocessed-expr)))
+
+(defn dnf [expr]
+    ((some (fn [rule]
+             (if ((first rule) expr)
+               (second rule)
+               false))
+           dnf-rules)
+     expr))
 
 (def dnf-rules
   (list
@@ -97,9 +141,8 @@
                   (dnf (negation (first (args (args expr)))))
                   (dnf (negation (second (args (args expr)))))))]
 
-    ; A->B ==> ¬A∨B
-    [(fn [expr] (implication? expr))
-     (fn [expr] (disjunction (dnf (negation (first (args expr)))) (dnf (second (args expr)))))]
+    [(fn [expr] (negation? expr))
+     (fn [expr] (negation (dnf (first (args expr)))))]
 
     ; (A∨B)∧C ==> (A∧C)∨(B∧C)
     [(fn [expr] (and (conjunction? expr)
@@ -171,8 +214,10 @@
     [(fn [expr] (disjunction? expr))
      (fn [expr] (disjunction (dnf (first (args expr))) (dnf (second (args expr)))))]
     ))
-; TODO: Use wikipedia examples to test all DNF transforms from there
+
+; TODO: Use wikipedia examples to test all DNF transforms from there.
 ; TODO: Add support for constants
 ; TODO: Add support for variable substitutions
 (defn -main [& args]
-  (println (dnf (disjunction (conjunction (variable :a) (variable :b)) (variable :c)))))
+  (println (dnf-with-preprocessing (negation (disjunction (implication (variable :x) (variable :y))
+                                       (negation (implication (variable :y) (variable :z))))))))
