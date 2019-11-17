@@ -1,6 +1,7 @@
 (ns clojure4.core)
 
 (defn constant [bool]
+  {:pre [(boolean? bool)]}
   (list ::const bool))
 
 (defn constant? [expr]
@@ -110,8 +111,17 @@
 (def dnf-rules
   (list
     ; A ==> A
-    [(fn [expr] (variable? expr))
+    [(fn [expr] (or
+                  (variable? expr)
+                  (constant? expr)))
      (fn [expr] expr)]
+
+    ; ¬true ==> false
+    ; ¬false ==> true
+    [(fn [expr] (and
+                  (negation? expr)
+                  (constant? (first (args expr)))))
+     (fn [expr] (constant (not (constant-value (first (args expr))))))]
 
     ; ¬A ==> ¬A
     [(fn [expr] (and
@@ -215,8 +225,11 @@
      (fn [expr] (disjunction (dnf (first (args expr))) (dnf (second (args expr)))))]
     ))
 
+; TODO: Use idempotency rules & others to fulfill elemntary conjuncts/disjuncts requirement
 ; TODO: Add support for constants
 ; TODO: Add support for variable substitutions
+; TODO: Add tests for all basic cases
+; TODO: Document APIs
 (defn -main [& args]
   (println (dnf-with-preprocessing (negation (disjunction (implication (variable :x) (variable :y))
                                        (negation (implication (variable :y) (variable :z))))))))
