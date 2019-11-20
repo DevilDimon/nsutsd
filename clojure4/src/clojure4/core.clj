@@ -51,54 +51,9 @@
   (= ::not (first expr)))
 
 (defn implication [expr1 expr2]
-  (list ::implies expr1 expr2))
-
-(defn implication? [expr]
-  (= ::implies (first expr)))
-
-(declare dnf-preprocessing-rules)
-
-(defn dnf-preprocess [expr]
-  ((some (fn [rule]
-           (if ((first rule) expr)
-             (second rule)
-             false))
-         dnf-preprocessing-rules)
-   expr))
-
-(def dnf-preprocessing-rules
-  (list
-    [(fn [expr] (variable? expr))
-     (fn [expr] expr)]
-
-    [(fn [expr] (constant? expr))
-     (fn [expr] expr)]
-
-    ; A->B ==> ¬A∨B
-    [(fn [expr] (implication? expr))
-     (fn [expr] (disjunction
-                  (dnf-preprocess (negation (first (args expr))))
-                  (dnf-preprocess (second (args expr)))))]
-
-
-    [(fn [expr] (= (count (args expr)) 1))
-     (fn [expr] (list (first expr) (dnf-preprocess (first (args expr)))))]
-
-    [(fn [expr] (= (count (args expr)) 2))
-     (fn [expr] (list (first expr) (dnf-preprocess (first (args expr))) (dnf-preprocess (second (args expr)))))]
-    ))
+  (disjunction (negation expr1) expr2))
 
 (declare dnf-rules)
-
-(defn dnf-with-preprocessing [expr]
-  (let [preprocessed-expr (dnf-preprocess expr)]
-    ;(println preprocessed-expr)
-    ((some (fn [rule]
-             (if ((first rule) preprocessed-expr)
-               (second rule)
-               false))
-           dnf-rules)
-     preprocessed-expr)))
 
 (defn dnf [expr]
     ((some (fn [rule]
@@ -249,4 +204,4 @@
 ; TODO: Add tests for all basic cases
 ; TODO: Document APIs
 (defn -main [& args]
-  (println (dnf-with-preprocessing (conjunction (variable ::a) (conjunction (variable ::a) (variable ::a))))))
+  (println (dnf (conjunction (variable ::a) (conjunction (variable ::a) (variable ::a))))))
