@@ -159,9 +159,9 @@
                      (disjunction? (first (args expr)))
                      (not (disjunction? (second (args expr))))
                      (not (conjunction? (second (args expr))))))
-     (fn [expr] (disjunction
+     (fn [expr] (dnf (disjunction
                   (conjunction (first (args (first (args expr)))) (second (args expr)))
-                  (conjunction (second (args (first (args expr)))) (second (args expr)))))]
+                  (conjunction (second (args (first (args expr)))) (second (args expr))))))]
 
     ; C∧(A∨B) ==> (A∧C)∨(B∧C)
     [(fn [expr] (and
@@ -169,9 +169,9 @@
                   (disjunction? (second (args expr)))
                   (not (disjunction? (first (args expr))))
                   (not (conjunction? (first (args expr))))))
-     (fn [expr] (disjunction
+     (fn [expr] (dnf (disjunction
                   (conjunction (first (args (second (args expr)))) (first (args expr)))
-                  (conjunction (second (args (second (args expr)))) (first (args expr)))))]
+                  (conjunction (second (args (second (args expr)))) (first (args expr))))))]
 
     ; (C∨D)∧(A∧B) ==> (A∧(B∧C))∨(A∧(B∧D))
     [(fn [expr] (and
@@ -182,9 +182,9 @@
                       second-first-arg (second (args (first (args expr))))
                       first-second-arg (first (args (second (args expr))))
                       second-second-arg (second (args (second (args expr))))]
-                  (disjunction
+                  (dnf (disjunction
                     (conjunction first-second-arg (conjunction second-second-arg first-first-arg))
-                    (conjunction first-second-arg (conjunction second-second-arg second-first-arg)))))]
+                    (conjunction first-second-arg (conjunction second-second-arg second-first-arg))))))]
 
     ; (A∧B)∧(C∨D) ==> (A∧(B∧C))∨(A∧(B∧D))
     [(fn [expr] (and
@@ -195,9 +195,9 @@
                       second-first-arg (second (args (first (args expr))))
                       first-second-arg (first (args (second (args expr))))
                       second-second-arg (second (args (second (args expr))))]
-                  (disjunction
+                  (dnf (disjunction
                     (conjunction first-first-arg (conjunction second-first-arg first-second-arg))
-                    (conjunction first-first-arg (conjunction second-first-arg second-second-arg)))))]
+                    (conjunction first-first-arg (conjunction second-first-arg second-second-arg))))))]
 
     ; (A∨B)∧(C∨D) ==> ((A∧C)∨(A∧D))∨((B∧C)∨(B∧D))
     [(fn [expr] (and
@@ -208,13 +208,31 @@
                       second-first-arg (second (args (first (args expr))))
                       first-second-arg (first (args (second (args expr))))
                       second-second-arg (second (args (second (args expr))))]
-                  (disjunction
+                  (dnf (disjunction
                     (disjunction
                       (conjunction first-first-arg first-second-arg)
                       (conjunction first-first-arg second-second-arg))
                     (disjunction
                       (conjunction second-first-arg first-second-arg)
-                      (conjunction second-first-arg second-second-arg)))))]
+                      (conjunction second-first-arg second-second-arg))))))]
+
+    ; A∧A, A∨A ==> A
+    [(fn [expr] (and
+                  (or (conjunction? expr) (disjunction? expr))
+                  (variable? (first (args expr)))
+                  (variable? (second (args expr)))
+                  (same-variables? (first (args expr)) (second (args expr)))))
+     (fn [expr] (first (args expr)))]
+
+    ; ¬A∧¬A, ¬A∨¬A ==> ¬A
+    [(fn [expr] (and
+                  (or (conjunction? expr) (disjunction? expr))
+                  (negation? (first (args expr)))
+                  (variable? (first (args (first (args expr)))))
+                  (negation? (second (args expr)))
+                  (variable? (first (args (second (args expr)))))
+                  (same-variables? (first (args (first (args expr)))) (first (args (second (args expr)))))))
+     (fn [expr] (first (args expr)))]
 
     ; A∧B ==> A∧B
     [(fn [expr] (conjunction? expr))
@@ -231,5 +249,4 @@
 ; TODO: Add tests for all basic cases
 ; TODO: Document APIs
 (defn -main [& args]
-  (println (dnf-with-preprocessing (negation (disjunction (implication (variable :x) (variable :y))
-                                       (negation (implication (variable :y) (variable :z))))))))
+  (println (dnf-with-preprocessing (conjunction (variable ::a) (conjunction (variable ::a) (variable ::a))))))

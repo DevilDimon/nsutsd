@@ -42,8 +42,7 @@
 (deftest complex-test
   (testing "Double implication with disjunction"
     (is (= '(::c/or
-              (::c/and (::c/var :x)
-                (::c/and (::c/not (::c/var :y)) (::c/not (::c/var :y))))
+              (::c/and (::c/var :x) (::c/not (::c/var :y)))
               (::c/and (::c/var :x)
                 (::c/and (::c/not (::c/var :y)) (::c/var :z))))
            (dnf-with-preprocessing (negation (disjunction (implication (variable :x) (variable :y))
