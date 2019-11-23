@@ -198,10 +198,45 @@
      (fn [expr] (disjunction (dnf (first (args expr))) (dnf (second (args expr)))))]
     ))
 
-; TODO: Use idempotency rules & others to fulfill elemntary conjuncts/disjuncts requirement
-; TODO: Add support for constants
-; TODO: Add support for variable substitutions
-; TODO: Add tests for all basic cases
+(declare var-substitution-rules)
+
+(defn substitute-vars [expr varmap]
+  ((some (fn [rule]
+           (if ((first rule) expr varmap)
+             (second rule)
+             false))
+         var-substitution-rules)
+   expr varmap))
+
+(def var-substitution-rules
+  (list
+    ; Substitute a variable with its value
+    [(fn [expr varmap] (and
+                         (variable? expr)
+                         (not (nil? (varmap (variable-name expr))))))
+     (fn [expr varmap] (constant (varmap (variable-name expr))))]
+
+    ; Leave unmentioned variables & constants intact
+    [(fn [expr varmap] (or (variable? expr) (constant? expr)))
+     (fn [expr varmap] expr)]
+
+    ; Evaluate recursively. Should be rewritten if proper multiple args are implemented
+    [(fn [expr varmap] (= (count (args expr)) 1))
+     (fn [expr varmap] (list (first expr) (substitute-vars (first (args expr)) varmap)))]
+
+    [(fn [expr varmap] (= (count (args expr)) 2))
+     (fn [expr varmap] (list
+                         (first expr)
+                         (substitute-vars (first (args expr)) varmap)
+                         (substitute-vars (second (args expr)) varmap)))]
+    ))
+
+; TODO: Transform all existing structures to conjunctions with multiple args, then apply evaluation to them (prob while they still evaluate further?)
+; TODO: OR Evaluate the existing structures themselves as long as the algorithm is feasible (which is debatable)
+; TODO: OR Rewrite the whole thing to use proper multiple args. Might not work with more difficult rules & might still require continuous evaluation. May not even work at all though
+; TODO: Add tests for all basic cases, add difficult cases from LogicNG
 ; TODO: Document APIs
 (defn -main [& args]
-  (println (dnf (conjunction (variable ::a) (conjunction (variable ::a) (variable ::a))))))
+  (println (substitute-vars (negation (disjunction (implication (variable :x) (variable :y))
+                                                   (negation (implication (variable :y) (variable :z)))))
+                            {:x true, :y false})))
