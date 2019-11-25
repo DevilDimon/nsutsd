@@ -252,6 +252,25 @@
         (cons (constant combined-const) combined-vars))
     ))
 
+(defn- collapse-disj [exprs]
+  (let [consts (filter constant? exprs)
+        vars (filter (fn [expr] (or (variable? expr) (negation? expr))) exprs)
+        combined-const (reduce (fn [acc entry] (or acc (constant-value entry))) false consts)
+        combined-vars (reverse (reduce (fn [acc entry]
+                                         (if (not (in? acc entry))
+                                           (cons entry acc)
+                                           acc))
+                                       () vars))
+        other-exprs (remove (fn [expr] (or (constant? expr) (variable? expr) (negation? expr))) exprs)]
+    (cond
+      (= combined-const false)
+        (if (and (empty? combined-vars) (empty? other-exprs))
+          (list (constant false))
+          (concat combined-vars other-exprs))
+      :default
+        (cons (constant combined-const) (concat combined-vars other-exprs)))
+    ))
+
 (defn conjunction-mult [expr & rest]
   (let [normalized-exprs
         (collapse-conj (cons expr rest))]
@@ -260,9 +279,11 @@
       (cons ::and-mult normalized-exprs))))
 
 (defn disjunction-mult [expr & rest]
-  (if (empty? rest)
-    expr
-    (cons ::or-mult (cons expr rest))))
+  (let [normalized-exprs
+        (collapse-disj (cons expr rest))]
+    (if (= 1 (count normalized-exprs))
+      (first normalized-exprs)
+      (cons ::or-mult normalized-exprs))))
 
 (defn disjunction-mult? [expr]
   (= (first expr) ::or-mult))
@@ -306,8 +327,8 @@
      (fn [expr] expr)]
     ))
 
-; TODO: Apply evaluation to the multiple args structures (prob while they still evaluate further?)
+; TODO: Tie everything together
 ; TODO: Add tests for all basic cases, add difficult cases from LogicNG
 ; TODO: Document APIs
 (defn -main [& args]
-  (println (transform-to-mult (conjunction (variable :a) (conjunction (variable :a) (conjunction (variable :a) (variable :a)))))))
+  (println (= (variable :a) (variable :b))))

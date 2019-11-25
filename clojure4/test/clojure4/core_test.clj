@@ -51,10 +51,10 @@
 (deftest multiple-transformation-test
   (testing "Complex multiple transformation"
     (is (= '(::c/or-mult
+              (::c/var :b)
               (::c/and-mult (::c/var :a) (::c/var :b) (::c/not (::c/var :c)))
               (::c/and-mult (::c/not (::c/var :d)) (::c/var :e) (::c/var :f))
-              (::c/and-mult (::c/var :c) (::c/var :d))
-              (::c/var :b))
+              (::c/and-mult (::c/var :c) (::c/var :d)))
            (transform-to-mult (disjunction
                                 (conjunction (variable :a) (conjunction (variable :b) (negation (variable :c))))
                                 (disjunction
@@ -67,5 +67,5 @@
                                 (conjunction
                                   (conjunction (variable :a) (negation (variable :b))) (negation (variable :b))))))))
   (testing "Simple oneway single-variable disjunction chain"
-    (is (= '(::c/or-mult (::c/var :a) (::c/var :a) (::c/var :a) (::c/var :a))
+    (is (= '(::c/var :a)
            (transform-to-mult (disjunction (variable :a) (disjunction (variable :a) (disjunction (variable :a) (variable :a)))))))))
