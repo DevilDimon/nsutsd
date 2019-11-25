@@ -40,9 +40,7 @@
   (= ::or (first expr)))
 
 (defn args [expr]
-  (cond
-    (= 2 (count expr)) (rest expr)
-    (= 3 (count expr)) (list (second expr) (nth expr 2))))
+  (rest expr))
 
 (defn negation [expr]
   (list ::not expr))
@@ -231,9 +229,6 @@
                          (substitute-vars (second (args expr)) varmap)))]
     ))
 
-(defn args-mult [expr]
-  (rest expr))
-
 (defn conjunction-mult [expr & rest]
   (if (empty? rest)
     expr
@@ -270,7 +265,7 @@
 
     [(fn [expr] (disjunction-mult? expr))
      (fn [expr] (apply disjunction-mult
-                       (map transform-to-mult (args-mult expr))))]
+                       (map transform-to-mult (args expr))))]
 
     [(fn [expr] (conjunction? expr))
      (fn [expr] (letfn [(transform-conj-to-mult [cur result]
