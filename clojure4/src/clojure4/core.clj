@@ -229,10 +229,35 @@
                          (substitute-vars (second (args expr)) varmap)))]
     ))
 
+(defn in?
+  "true if coll contains elm"
+  [coll elm]
+  (some #(= elm %) coll))
+
+(defn- collapse-conj [exprs]
+  (let [consts (filter constant? exprs)
+        vars (filter (fn [expr] (or (variable? expr) (negation? expr))) exprs)
+        combined-const (reduce (fn [acc entry] (and acc (constant-value entry))) true consts)
+        combined-vars (reverse (reduce (fn [acc entry]
+                                (if (not (in? acc entry))
+                                  (cons entry acc)
+                                  acc))
+                              () vars))]
+    (cond
+      (= combined-const true)
+        (if (empty? combined-vars)
+          (list (constant true))
+          combined-vars)
+      :default
+        (cons (constant combined-const) combined-vars))
+    ))
+
 (defn conjunction-mult [expr & rest]
-  (if (empty? rest)
-    expr
-    (cons ::and-mult (cons expr rest))))
+  (let [normalized-exprs
+        (collapse-conj (cons expr rest))]
+    (if (= 1 (count normalized-exprs))
+      (first normalized-exprs)
+      (cons ::and-mult normalized-exprs))))
 
 (defn disjunction-mult [expr & rest]
   (if (empty? rest)
@@ -274,7 +299,8 @@
                                                    (first (args cur))
                                                    (transform-conj-to-mult (second (args cur)) result))
                               :default (cons cur result)))]
-                  (transform-to-mult (cons ::and-mult (transform-conj-to-mult expr ())))))]
+                  (transform-to-mult (apply conjunction-mult
+                                            (transform-conj-to-mult expr ())))))]
 
     [(fn [_] true)
      (fn [expr] expr)]
@@ -284,4 +310,4 @@
 ; TODO: Add tests for all basic cases, add difficult cases from LogicNG
 ; TODO: Document APIs
 (defn -main [& args]
-  (println (transform-to-mult (disjunction (variable :a) (disjunction (variable :a) (disjunction (variable :a) (variable :a)))))))
+  (println (transform-to-mult (conjunction (variable :a) (conjunction (variable :a) (conjunction (variable :a) (variable :a)))))))

@@ -61,7 +61,7 @@
                                   (conjunction (negation (variable :d)) (conjunction (variable :e) (variable :f)))
                                   (disjunction (conjunction (variable :c) (variable :d)) (variable :b))))))))
   (testing "Simpler recursive conjunction"
-    (is (= '(::c/and-mult (::c/const true) (::c/const false) (::c/var :a) (::c/not (::c/var :b)) (::c/not (::c/var :b)))
+    (is (= '(::c/and-mult (::c/const false) (::c/var :a) (::c/not (::c/var :b)))
            (transform-to-mult (conjunction
                                 (conjunction (constant true) (constant false))
                                 (conjunction
