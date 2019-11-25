@@ -217,26 +217,76 @@
      (fn [expr varmap] (constant (varmap (variable-name expr))))]
 
     ; Leave unmentioned variables & constants intact
-    [(fn [expr varmap] (or (variable? expr) (constant? expr)))
-     (fn [expr varmap] expr)]
+    [(fn [expr _] (or (variable? expr) (constant? expr)))
+     (fn [expr _] expr)]
 
     ; Evaluate recursively. Should be rewritten if proper multiple args are implemented
-    [(fn [expr varmap] (= (count (args expr)) 1))
+    [(fn [expr _] (= (count (args expr)) 1))
      (fn [expr varmap] (list (first expr) (substitute-vars (first (args expr)) varmap)))]
 
-    [(fn [expr varmap] (= (count (args expr)) 2))
+    [(fn [expr _] (= (count (args expr)) 2))
      (fn [expr varmap] (list
                          (first expr)
                          (substitute-vars (first (args expr)) varmap)
                          (substitute-vars (second (args expr)) varmap)))]
     ))
 
-; TODO: Transform all existing structures to conjunctions with multiple args, then apply evaluation to them (prob while they still evaluate further?)
-; TODO: OR Evaluate the existing structures themselves as long as the algorithm is feasible (which is debatable)
-; TODO: OR Rewrite the whole thing to use proper multiple args. Might not work with more difficult rules & might still require continuous evaluation. May not even work at all though
+(defn args-mult [expr]
+  (rest expr))
+
+(defn conjunction-mult [expr & rest]
+  (if (empty? rest)
+    expr
+    (cons ::and-mult (cons expr rest))))
+
+(defn disjunction-mult [expr & rest]
+  (if (empty? rest)
+    expr
+    (cons ::or-mult (cons expr rest))))
+
+(defn disjunction-mult? [expr]
+  (= (first expr) ::or-mult))
+
+(declare mult-rules)
+
+(defn transform-to-mult [expr]
+  ((some (fn [rule]
+           (if ((first rule) expr)
+             (second rule)
+             false))
+         mult-rules)
+   expr))
+
+(def mult-rules
+  (list
+    [(fn [expr] (disjunction? expr))
+     (fn [expr] (letfn [(transform-disj-to-mult [cur result]
+                        (cond
+                          (disjunction? cur) (transform-disj-to-mult
+                                               (first (args cur))
+                                               (transform-disj-to-mult (second (args cur)) result))
+                          :default (cons cur result)))]
+                  (transform-to-mult (cons ::or-mult (transform-disj-to-mult expr ())))))]
+
+    [(fn [expr] (disjunction-mult? expr))
+     (fn [expr] (apply disjunction-mult
+                       (map transform-to-mult (args-mult expr))))]
+
+    [(fn [expr] (conjunction? expr))
+     (fn [expr] (letfn [(transform-conj-to-mult [cur result]
+                            (cond
+                              (conjunction? cur) (transform-conj-to-mult
+                                                   (first (args cur))
+                                                   (transform-conj-to-mult (second (args cur)) result))
+                              :default (cons cur result)))]
+                  (transform-to-mult (cons ::and-mult (transform-conj-to-mult expr ())))))]
+
+    [(fn [_] true)
+     (fn [expr] expr)]
+    ))
+
+; TODO: Apply evaluation to the multiple args structures (prob while they still evaluate further?)
 ; TODO: Add tests for all basic cases, add difficult cases from LogicNG
 ; TODO: Document APIs
 (defn -main [& args]
-  (println (substitute-vars (negation (disjunction (implication (variable :x) (variable :y))
-                                                   (negation (implication (variable :y) (variable :z)))))
-                            {:x true, :y false})))
+  (println (transform-to-mult (disjunction (variable :a) (disjunction (variable :a) (disjunction (variable :a) (variable :a)))))))

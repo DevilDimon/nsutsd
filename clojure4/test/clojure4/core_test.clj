@@ -47,3 +47,25 @@
                 (::c/and (::c/not (::c/var :y)) (::c/var :z))))
            (dnf (negation (disjunction (implication (variable :x) (variable :y))
                                                           (negation (implication (variable :y) (variable :z))))))))))
+
+(deftest multiple-transformation-test
+  (testing "Complex multiple transformation"
+    (is (= '(::c/or-mult
+              (::c/and-mult (::c/var :a) (::c/var :b) (::c/not (::c/var :c)))
+              (::c/and-mult (::c/not (::c/var :d)) (::c/var :e) (::c/var :f))
+              (::c/and-mult (::c/var :c) (::c/var :d))
+              (::c/var :b))
+           (transform-to-mult (disjunction
+                                (conjunction (variable :a) (conjunction (variable :b) (negation (variable :c))))
+                                (disjunction
+                                  (conjunction (negation (variable :d)) (conjunction (variable :e) (variable :f)))
+                                  (disjunction (conjunction (variable :c) (variable :d)) (variable :b))))))))
+  (testing "Simpler recursive conjunction"
+    (is (= '(::c/and-mult (::c/const true) (::c/const false) (::c/var :a) (::c/not (::c/var :b)) (::c/not (::c/var :b)))
+           (transform-to-mult (conjunction
+                                (conjunction (constant true) (constant false))
+                                (conjunction
+                                  (conjunction (variable :a) (negation (variable :b))) (negation (variable :b))))))))
+  (testing "Simple oneway single-variable disjunction chain"
+    (is (= '(::c/or-mult (::c/var :a) (::c/var :a) (::c/var :a) (::c/var :a))
+           (transform-to-mult (disjunction (variable :a) (disjunction (variable :a) (disjunction (variable :a) (variable :a)))))))))
