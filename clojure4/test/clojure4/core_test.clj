@@ -31,6 +31,36 @@
                     (conjunction (negation (variable :d)) (conjunction (variable :e) (variable :f)))
                     (disjunction (conjunction (variable :c) (variable :d)) (variable :b)))))))))
 
+(deftest simple-subsumption-test
+  (is (= '(::c/const false) (final-dnf (constant false))))
+  (is (= '(::c/const true) (final-dnf (constant true))))
+  (is (= '(::c/var :a) (final-dnf (variable :a))))
+  (is (= '(::c/not (::c/var :a)) (final-dnf (negation (variable :a)))))
+  (is (= '(::c/or-mult (::c/var :a) (::c/var :b) (::c/var :c))
+         (final-dnf (disjunction (variable :a) (disjunction (variable :b) (variable :c))))))
+  (is (= '(::c/and-mult (::c/var :a) (::c/var :b) (::c/var :c))
+         (final-dnf (conjunction (variable :a) (conjunction (variable :b) (variable :c)))))))
+
+(deftest negation-test
+  (is (= '(::c/var :a) (final-dnf (negation (negation (variable :a))))))
+  (is (= '(::c/and-mult (::c/var :a) (::c/not (::c/var :b)))
+         (final-dnf (negation (implication (variable :a) (variable :b))))))
+  (is (= '(::c/or-mult
+            (::c/and-mult (::c/not (::c/var :a)) (::c/not (::c/var :b)) (::c/var :x))
+            (::c/and-mult (::c/not (::c/var :a)) (::c/not (::c/var :b)) (::c/var :y)))
+         (final-dnf (negation (implication (negation (disjunction (variable :a) (variable :b)))
+                                           (negation (disjunction (variable :x) (variable :y))))))))
+  (is (= '(::c/or-mult (::c/not (::c/var :a)) (::c/not (::c/var :b)) (::c/var :x) (::c/var :y))
+         (final-dnf (negation
+                      (conjunction (variable :a)
+                                   (conjunction (variable :b)
+                                                (conjunction (negation (variable :x)) (negation (variable :y)))))))))
+  (is (= '(::c/and-mult (::c/not (::c/var :a)) (::c/not (::c/var :b)) (::c/var :x) (::c/var :y))
+         (final-dnf (negation
+                      (disjunction (variable :a)
+                                   (disjunction (variable :b)
+                                                (disjunction (negation (variable :x)) (negation (variable :y))))))))))
+
 (deftest implication-test
   (testing "Simple implication"
     (is (= '(::c/or (::c/not (::c/var :a)) (::c/var :b))
@@ -69,3 +99,10 @@
   (testing "Simple oneway single-variable disjunction chain"
     (is (= '(::c/var :a)
            (transform-to-mult (disjunction (variable :a) (disjunction (variable :a) (disjunction (variable :a) (variable :a)))))))))
+
+(deftest evaluation-test
+  (is (= '(::c/const false)
+         (final-dnf (conjunction
+                      (disjunction (variable :p) (disjunction (variable :q) (variable :r)))
+                      (disjunction (negation (variable :p)) (negation (variable :q))))
+                    {:p true, :q true, :r false}))))

@@ -229,7 +229,7 @@
                          (substitute-vars (second (args expr)) varmap)))]
     ))
 
-(defn in?
+(defn- in?
   "true if coll contains elm"
   [coll elm]
   (some #(= elm %) coll))
@@ -327,8 +327,11 @@
      (fn [expr] expr)]
     ))
 
-; TODO: Tie everything together
-; TODO: Add tests for all basic cases, add difficult cases from LogicNG
+(defn final-dnf
+  ([expr] (transform-to-mult (dnf expr)))
+  ([expr varmap]
+    (transform-to-mult (dnf (substitute-vars (dnf expr) varmap)))))
+
 ; TODO: Document APIs
 (defn -main [& args]
   (println (= (variable :a) (variable :b))))
