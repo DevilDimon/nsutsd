@@ -1,59 +1,91 @@
 (ns clojure4.core)
 
-(defn constant [bool]
+(defn constant
+  "Creates a constant"
+  [bool]
   {:pre [(boolean? bool)]}
   (list ::const bool))
 
-(defn constant? [expr]
+(defn constant?
+  "Return true if expr is a constant"
+  [expr]
   (= (first expr) ::const))
 
-(defn constant-value [const]
+(defn constant-value
+  "Return the value of const"
+  [const]
   (second const))
 
-(defn variable [name]
+(defn variable
+  "Creates a new variable"
+  [name]
   {:pre [(keyword? name)]}
   (list ::var name))
 
-(defn variable? [expr]
+(defn variable?
+  "Return true if expr is a variable"
+  [expr]
   (= (first expr) ::var))
 
-(defn variable-name [v]
+(defn variable-name
+  "Return the name of v"
+  [v]
   (second v))
 
-(defn same-variables? [v1 v2]
+(defn same-variables?
+  "Return true if v1 and v2 are the same variables"
+  [v1 v2]
   (and
     (variable? v1)
     (variable? v2)
     (= (variable-name v1)
        (variable-name v2))))
 
-(defn conjunction [expr1 expr2]
+(defn conjunction
+  "Creates a conjunction of expr1 and expr2, i.e. expr1 ∧ expr2"
+  [expr1 expr2]
   (list ::and expr1 expr2))
 
-(defn conjunction? [expr]
+(defn conjunction?
+  "Return true if expr is a conjunction"
+  [expr]
   (= ::and (first expr)))
 
-(defn disjunction [expr1 expr2]
+(defn disjunction
+  "Creates a disjunction of expr1 and expr2, i.e. expr1 ∨ expr2"
+  [expr1 expr2]
   (list ::or expr1 expr2))
 
-(defn disjunction? [expr]
+(defn disjunction?
+  "Return true if expr is a disjunction"
+  [expr]
   (= ::or (first expr)))
 
-(defn args [expr]
+(defn args
+  "Returns the arguments of expr"
+  [expr]
   (rest expr))
 
-(defn negation [expr]
+(defn negation
+  "Creates a negation of expr, i.e. ¬expr"
+  [expr]
   (list ::not expr))
 
-(defn negation? [expr]
+(defn negation?
+  "Return true if expr is a negation"
+  [expr]
   (= ::not (first expr)))
 
-(defn implication [expr1 expr2]
+(defn implication
+  "Creates an implication (condition) of expr1 and expr2, i.e. expr1 → expr2"
+  [expr1 expr2]
   (disjunction (negation expr1) expr2))
 
 (declare dnf-rules)
 
-(defn dnf [expr]
+(defn dnf
+  "Calculates the disjunctive normal form of expr, not evaluated in terms of constants"
+  [expr]
     ((some (fn [rule]
              (if ((first rule) expr)
                (second rule)
@@ -198,7 +230,9 @@
 
 (declare var-substitution-rules)
 
-(defn substitute-vars [expr varmap]
+(defn substitute-vars
+  "Replaces all variables in expr with their corresponding values in varmap"
+  [expr varmap]
   ((some (fn [rule]
            (if ((first rule) expr varmap)
              (second rule)
@@ -230,7 +264,7 @@
     ))
 
 (defn- in?
-  "true if coll contains elm"
+  "Return true if coll contains elm"
   [coll elm]
   (some #(= elm %) coll))
 
@@ -271,26 +305,36 @@
         (cons (constant combined-const) (concat combined-vars other-exprs)))
     ))
 
-(defn conjunction-mult [expr & rest]
+(defn conjunction-mult
+  "Creates an evaluated (in terms of constants & variables) conjunction of all args.
+  If evaluation yields a single literal it is used as a result"
+  [expr & rest]
   (let [normalized-exprs
         (collapse-conj (cons expr rest))]
     (if (= 1 (count normalized-exprs))
       (first normalized-exprs)
       (cons ::and-mult normalized-exprs))))
 
-(defn disjunction-mult [expr & rest]
+(defn disjunction-mult
+  "Creates an evaluated (in terms of constants & variables) disjunction of all args.
+  If evaluation yields a single literal or a conjunction it is used as a result"
+  [expr & rest]
   (let [normalized-exprs
         (collapse-disj (cons expr rest))]
     (if (= 1 (count normalized-exprs))
       (first normalized-exprs)
       (cons ::or-mult normalized-exprs))))
 
-(defn disjunction-mult? [expr]
+(defn disjunction-mult?
+  "Return true if expr is a disjunction of multiple arguments"
+  [expr]
   (= (first expr) ::or-mult))
 
 (declare mult-rules)
 
-(defn transform-to-mult [expr]
+(defn transform-to-mult
+  "Transform expr (assumed to be in DNF) to multiple argument disjunction/conjunction expression"
+  [expr]
   ((some (fn [rule]
            (if ((first rule) expr)
              (second rule)
@@ -328,10 +372,12 @@
     ))
 
 (defn final-dnf
+  "Returns the final value of expr, evaluated in regards to constants & variables.
+  varmap should be a hashmap of keywords to bool values, mapping variables to their values.
+  If varmap is supplied, the corresponding values of variables in varmap are used in evaluating expr"
   ([expr] (transform-to-mult (dnf expr)))
   ([expr varmap]
     (transform-to-mult (dnf (substitute-vars (dnf expr) varmap)))))
 
-; TODO: Document APIs
 (defn -main [& args]
   (println (= (variable :a) (variable :b))))
