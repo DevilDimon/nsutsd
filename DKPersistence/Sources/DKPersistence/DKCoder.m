@@ -6,7 +6,7 @@
 
 - (NSString *)encodeObject:(id)object
 {
-	if (object == nil) { return @"nil"; }
+	if (object == nil || [object isKindOfClass:[NSNull class]]) { return @"nil"; }
 	
 	if ([object isKindOfClass:[NSNumber class]]) {
 		return ((NSNumber *)object).stringValue;
