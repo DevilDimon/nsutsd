@@ -34,9 +34,9 @@
 // TODO: Tests
 int main(int argc, const char * argv[]) {
 	@autoreleasepool {
-		DKPersistenceService *persistence = [DKPersistenceService new];
+		DKCoder *persistence = [DKCoder new];
 		Test1 *test = [Test1 new];
-		NSLog(@"%@", [persistence persistObject:@[test, @"\"",@{@"":@21, @"jo\"j":@{@"kek":@1.1}}]]);
+		NSLog(@"%@", [persistence encodeObject:@[test, @"\"",@{@"":@21, @"jo\"j":@{@"kek":@1.1}}]]);
 	}
 	return 0;
 }
