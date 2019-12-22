@@ -4,9 +4,9 @@
 
 @implementation DKCoder
 
-- (NSString *)encodeObject:(id)object
++ (NSString *)encodeObject:(id)object
 {
-	if (object == nil || [object isKindOfClass:[NSNull class]]) { return @"nil"; }
+	if (object == nil || [object isKindOfClass:[NSNull class]]) { return @"null"; }
 	
 	if ([object isKindOfClass:[NSNumber class]]) {
 		return ((NSNumber *)object).stringValue;
@@ -14,17 +14,17 @@
 	
 	if ([object isKindOfClass:[NSString class]]) {
 		NSString *string = object;
-		return [self encodeString:string];
+		return [[self class] encodeString:string];
 	}
 	
 	if ([object isKindOfClass:[NSDictionary class]]) {
 		NSDictionary *dictionary = object;
-		return [self encodeDictionary:dictionary];
+		return [[self class] encodeDictionary:dictionary];
 	}
 	
 	if ([object isKindOfClass:[NSArray class]]) {
 		NSArray *array = object;
-		return [self encodeArray:array];
+		return [[self class] encodeArray:array];
 	}
 	
 	NSMutableString *result = [NSMutableString stringWithString:@"{"];
@@ -38,13 +38,13 @@
 			continue;
 		}
 		
-		NSString *persisted = [self encodeObject:ivar];
+		NSString *persisted = [[self class] encodeObject:ivar];
 		if (persisted == nil) {
 			continue;
 		}
 		
 		hasIvars = YES;
-		[result appendFormat:@"%@:%@,", [self encodeObject:name], persisted];
+		[result appendFormat:@"%@:%@,", [[self class] encodeObject:name], persisted];
 	}
 	
 	if (hasIvars) {
@@ -55,28 +55,26 @@
 	return [result copy];
 }
 
-- (NSString *)encodeString:(NSString *)string
++ (NSString *)encodeString:(NSString *)string
 {
 	NSMutableString *result = [NSMutableString stringWithString:@"\""];
-	NSString *encodedString = [string stringByReplacingOccurrencesOfString:@"\""
-		withString:@"\\\"" options:NSLiteralSearch
-		range:NSMakeRange(0, string.length)];
+	NSString *encodedString = [string stringByReplacingOccurrencesOfString:@"\"" withString:@"\\\""];
 	[result appendFormat:@"%@\"", encodedString];
 	return [result copy];
 }
 
-- (NSString *)encodeDictionary:(NSDictionary *)dictionary
++ (NSString *)encodeDictionary:(NSDictionary *)dictionary
 {
 	NSMutableString *result = [NSMutableString stringWithString:@"{"];
 	BOOL hasElements = NO;
 	for (NSString *key in dictionary) {
-		NSString *persisted = [self encodeObject:dictionary[key]];
+		NSString *persisted = [[self class] encodeObject:dictionary[key]];
 		if (persisted == nil) {
 			continue;
 		}
 		hasElements = YES;
 		[result appendFormat:@"%@:%@,",
-			[self encodeObject:key], persisted];
+			[[self class] encodeObject:key], persisted];
 	}
 	
 	if (hasElements) {
@@ -87,12 +85,12 @@
 	return [result copy];
 }
 
-- (NSString *)encodeArray:(NSArray *)array
++ (NSString *)encodeArray:(NSArray *)array
 {
 	NSMutableString *result = [NSMutableString stringWithString:@"["];
 	BOOL hasElements = NO;
 	for (id item in array) {
-		NSString *persisted = [self encodeObject:item];
+		NSString *persisted = [[self class] encodeObject:item];
 		if (persisted == nil) {
 			continue;
 		}

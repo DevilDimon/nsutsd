@@ -15,4 +15,27 @@
 	return self;
 }
 
+- (BOOL)isEqual:(id)other
+{
+	if (other == self) {
+		return YES;
+	} else if (![other isKindOfClass:[self class]]) {
+		return NO;
+	} else {
+		typeof(self) otherObj = other;
+		return [_numberVar isEqualToNumber:otherObj->_numberVar] &&
+				[_stringVar isEqualToString:otherObj->_stringVar] &&
+				[_dictVar isEqualToDictionary:otherObj->_dictVar] &&
+				[_arrVar isEqualToArray:otherObj->_arrVar];
+	}
+}
+
+- (NSUInteger)hash
+{
+	return _numberVar.hash ^
+			_stringVar.hash ^
+			_dictVar.hash ^
+			_arrVar.hash;
+}
+
 @end

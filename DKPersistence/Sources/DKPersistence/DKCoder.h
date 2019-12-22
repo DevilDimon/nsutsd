@@ -4,7 +4,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @interface DKCoder : NSObject
 
-- (nullable NSString *)encodeObject:(nullable id)object;
++ (nullable NSString *)encodeObject:(nullable id)object;
 
 @end
 
