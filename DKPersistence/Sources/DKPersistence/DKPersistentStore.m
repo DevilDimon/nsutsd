@@ -42,4 +42,24 @@
 	return YES;
 }
 
+- (void)deleteObject:(id)object class:(Class)cls
+{
+	if (![object isKindOfClass:cls]) {
+		return;
+	}
+	
+	NSString *encoded = [DKCoder encodeObject:object];
+	if (encoded == nil) {
+		return;
+	}
+	
+	NSMutableArray<NSString *> *valuesArray = self.store[cls];
+	NSUInteger indexOfObject = [valuesArray indexOfObject:encoded];
+	if (indexOfObject == NSNotFound) {
+		return;
+	}
+	
+	[valuesArray removeObjectAtIndex:indexOfObject];
+}
+
 @end

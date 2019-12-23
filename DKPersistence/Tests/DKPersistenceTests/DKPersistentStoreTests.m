@@ -54,4 +54,27 @@
 	XCTAssertEqual(self.store.store[[NSNull class]].count, 1);
 }
 
+- (void)testSingleDelete
+{
+	DKTestObject1 *object = [DKTestObject1 new];
+	[self.store insertObject:object class:[DKTestObject1 class]];
+	[self.store deleteObject:object class:[DKTestObject1 class]];
+	
+	XCTAssertEqual(self.store.store.count, 1);
+	XCTAssertNotNil(self.store.store[[DKTestObject1 class]]);
+	XCTAssertEqual(self.store.store[[DKTestObject1 class]].count, 0);
+}
+
+- (void)testIdenticalDelete
+{
+	DKTestObject1 *object = [DKTestObject1 new];
+	[self.store insertObject:object class:[DKTestObject1 class]];
+	[self.store insertObject:object class:[DKTestObject1 class]];
+	[self.store deleteObject:object class:[DKTestObject1 class]];
+	
+	XCTAssertEqual(self.store.store.count, 1);
+	XCTAssertNotNil(self.store.store[[DKTestObject1 class]]);
+	XCTAssertEqual(self.store.store[[DKTestObject1 class]].count, 1);
+}
+
 @end
