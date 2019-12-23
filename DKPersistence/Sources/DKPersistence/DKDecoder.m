@@ -1,6 +1,6 @@
 #import "DKDecoder.h"
 
-#import <objc/runtime.h>
+@import ObjectiveC;
 
 @implementation DKDecoder
 
