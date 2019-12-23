@@ -15,6 +15,16 @@
 	return self;
 }
 
+- (instancetype)initWithNumber:(NSNumber *)number
+{
+	self = [self init];
+	if (self == nil) { return nil; }
+	
+	_numberVar = number;
+	
+	return self;
+}
+
 - (BOOL)isEqual:(id)other
 {
 	if (other == self) {

@@ -77,4 +77,47 @@
 	XCTAssertEqual(self.store.store[[DKTestObject1 class]].count, 1);
 }
 
+- (void)testZeroResultsFetch
+{
+	DKFetchRequest *request = [[DKFetchRequest alloc] initWithEntityClass:[DKTestObject1 class]];
+	NSError *error;
+	NSArray *results = [self.store executeFetchRequest:request error:&error];
+	
+	XCTAssertNil(error);
+	XCTAssertNotNil(results);
+	XCTAssertEqualObjects(results, @[]);
+}
+
+- (void)testNoPredicateFetch
+{
+	[self.store insertObject:@1 class:[NSNumber class]];
+	[self.store insertObject:@22.8 class:[NSNumber class]];
+	[self.store insertObject:@YES class:[NSNumber class]];
+	
+	DKFetchRequest *request = [[DKFetchRequest alloc] initWithEntityClass:[NSNumber class]];
+	NSError *error;
+	NSArray *results = [self.store executeFetchRequest:request error:&error];
+	
+	XCTAssertNil(error);
+	XCTAssertNotNil(results);
+	NSArray *expected = @[@1, @22.8, @YES];
+	XCTAssertEqualObjects(results, expected);
+}
+
+- (void)testPredicateFetch
+{
+	DKTestObject1 *obj1 = [DKTestObject1 new];
+	DKTestObject1 *obj2 = [[DKTestObject1 alloc] initWithNumber:@-1];
+	
+	[self.store insertObject:obj1 class:[DKTestObject1 class]];
+	[self.store insertObject:obj2 class:[DKTestObject1 class]];
+	
+	DKFetchRequest *request = [[DKFetchRequest alloc] initWithEntityClass:[DKTestObject1 class]];
+	request.predicate = [NSPredicate predicateWithValue:NO];
+	XCTAssertEqualObjects([self.store executeFetchRequest:request error:nil], @[]);
+	
+	request.predicate = [NSPredicate predicateWithFormat:@"_numberVar < 0"];
+	XCTAssertEqualObjects([self.store executeFetchRequest:request error:nil], @[obj2]);
+}
+
 @end

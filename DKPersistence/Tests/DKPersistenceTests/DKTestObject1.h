@@ -9,4 +9,6 @@
 	int a;
 }
 
+- (instancetype)initWithNumber:(NSNumber *)number;
+
 @end

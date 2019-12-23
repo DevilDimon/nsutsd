@@ -1,5 +1,8 @@
 @import Foundation;
-@import ObjectiveC;
+
+@class DKFetchRequest;
+
+extern NSErrorDomain _Nonnull DKPersistentStoreErrorDomain;
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -7,6 +10,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (BOOL)insertObject:(id)object class:(Class)cls;
 - (void)deleteObject:(id)object class:(Class)cls;
+- (NSArray *)executeFetchRequest:(DKFetchRequest *)request error:(NSError *__autoreleasing *)error;
 
 @end
 

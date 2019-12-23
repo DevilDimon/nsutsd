@@ -1,6 +1,9 @@
 #import "DKPersistentStore.h"
 #import "DKCoder.h"
 #import "DKDecoder.h"
+#import "DKFetchRequest.h"
+
+NSErrorDomain _Nonnull DKPersistentStoreErrorDomain = @"DKPersistentStoreErrorDomain";
 
 @interface DKPersistentStore ()
 
@@ -60,6 +63,29 @@
 	}
 	
 	[valuesArray removeObjectAtIndex:indexOfObject];
+}
+
+- (NSArray *)executeFetchRequest:(DKFetchRequest *)request error:(NSError *__autoreleasing *)error
+{
+	if (request.entityClass == nil) {
+		*error = [NSError errorWithDomain:DKPersistentStoreErrorDomain code:1 userInfo:nil];
+		return nil;
+	}
+	
+	NSMutableArray *result = [NSMutableArray array];
+	
+	for (NSString *encoded in self.store[request.entityClass]) {
+		id decoded = [DKDecoder decodeObjectOfClass:request.entityClass fromString:encoded];
+		if (decoded == nil) {
+			continue;
+		}
+		
+		if (request.predicate == nil || [request.predicate evaluateWithObject:decoded]) {
+			[result addObject:decoded];
+		}
+	}
+	
+	return [result copy];
 }
 
 @end
