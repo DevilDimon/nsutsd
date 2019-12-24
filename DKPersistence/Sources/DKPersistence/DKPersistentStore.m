@@ -3,11 +3,14 @@
 #import "DKDecoder.h"
 #import "DKFetchRequest.h"
 
+@import ObjectiveC;
+
 NSErrorDomain _Nonnull DKPersistentStoreErrorDomain = @"DKPersistentStoreErrorDomain";
 
 @interface DKPersistentStore ()
 
 @property (nonatomic) NSMutableDictionary<Class, NSMutableArray<NSString *> *> *store;
+@property (nonatomic) NSUInteger pseudoClassCount;
 
 @end
 
@@ -20,6 +23,7 @@ NSErrorDomain _Nonnull DKPersistentStoreErrorDomain = @"DKPersistentStoreErrorDo
 	if (self == nil) { return nil; }
 	
 	_store = [[NSMutableDictionary alloc] init];
+	_pseudoClassCount = 0;
 	
 	return self;
 }
@@ -85,7 +89,34 @@ NSErrorDomain _Nonnull DKPersistentStoreErrorDomain = @"DKPersistentStoreErrorDo
 		}
 	}
 	
-	return [result copy];
+	if (request.ivarsToFetch.count == 0) {
+		return [result copy];
+	}
+	
+	const char *pseudoClassName = [NSString stringWithFormat:@"DKPseudoClass%lu", self.pseudoClassCount].UTF8String;
+	self.pseudoClassCount++;
+	Class pseudoClass = objc_allocateClassPair([NSObject class], pseudoClassName, 0);
+	for (NSString *ivarName in request.ivarsToFetch) {
+		const char *ivarEncoding = ivar_getTypeEncoding(class_getInstanceVariable(request.entityClass, ivarName.UTF8String));
+		NSUInteger size, alignment;
+		NSGetSizeAndAlignment(ivarEncoding, &size, &alignment);
+		class_addIvar(pseudoClass, ivarName.UTF8String, size, alignment, ivarEncoding);
+	}
+	objc_registerClassPair(pseudoClass);
+	
+	NSMutableArray *projectedResult = [NSMutableArray array];
+	for (id object in result) {
+		id pseudoInstance = [[pseudoClass alloc] init];
+		
+		for (NSString *ivarName in request.ivarsToFetch) {
+			id value = [object valueForKey:ivarName];
+			[pseudoInstance setValue:value forKey:ivarName];
+		}
+		
+		[projectedResult addObject:pseudoInstance];
+	}
+	
+	return [projectedResult copy];
 }
 
 @end

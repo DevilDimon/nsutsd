@@ -120,4 +120,25 @@
 	XCTAssertEqualObjects([self.store executeFetchRequest:request error:nil], @[obj2]);
 }
 
+- (void)testIvarFetch
+{
+	DKTestObject1 *obj1 = [DKTestObject1 new];
+	DKTestObject1 *obj2 = [[DKTestObject1 alloc] initWithNumber:@-1];
+	DKTestObject1 *obj3 = [[DKTestObject1 alloc] initWithNumber:@0];
+	
+	[self.store insertObject:obj1 class:[DKTestObject1 class]];
+	[self.store insertObject:obj2 class:[DKTestObject1 class]];
+	[self.store insertObject:obj3 class:[DKTestObject1 class]];
+	
+	DKFetchRequest *request = [[DKFetchRequest alloc] initWithEntityClass:[DKTestObject1 class]];
+	request.predicate = [NSPredicate predicateWithFormat:@"_numberVar <= 0"];
+	request.ivarsToFetch = @[@"_numberVar"];
+	
+	NSArray *result = [self.store executeFetchRequest:request error:nil];
+	XCTAssertEqual(result.count, 2);
+	XCTAssertEqualObjects([result[0] valueForKey:@"_numberVar"], [NSNumber numberWithInteger:-1]);
+	XCTAssertEqualObjects([result[1] valueForKey:@"_numberVar"], [NSNumber numberWithInteger:0]);
+	XCTAssertThrows([result[0] valueForKey:@"_stringVar"]);
+}
+
 @end
